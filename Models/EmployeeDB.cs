@@ -4,11 +4,11 @@ namespace CompanyApi.Models;
 
 public class EmployeeDB
 {
-    public EmployeeDB(string name, DateTime birthdate, EmployeeStatusDB statusDb, JobTitleDB jobTitle)
+    public EmployeeDB(string name, DateTime birthdate, EmployeeStatusDB status, JobTitleDB jobTitle)
     {
         Name = name;
         Birthdate = birthdate;
-        StatusDb = statusDb;
+        StatusDb = status;
         JobTitle = jobTitle;
     }
     

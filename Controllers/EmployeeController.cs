@@ -11,46 +11,8 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
 {
     private readonly AppDbContext _context = contex;
     private readonly ILogger<EmployeeController> _logger = logger;
-    
-    [HttpGet("Get")]
-    public IActionResult Get(string name)
-    {
-        // Collect employee by name from the internal function
-        Employee employee;
-        try
-        {
-            employee = GetEmployee(name);
-        }
-        catch (NotFoundException e)
-        {
-            Console.WriteLine(e);
-            return NotFound(e.Message);
-        }
-        return Ok(employee);
-    }
 
-    private Employee GetEmployee(string name)
-    {
-        var status = new EmployeeStatusDB("abc");
-        var title = new JobTitleDB("abc");
-        var emp = new EmployeeDB(name, DateTime.Now, status, title); 
-        if (emp.Name == "tiago")
-        {
-            return ConvertFromDatabase(emp);
-        }
-
-        var users = _context.Employees.ToArray();
-        _context.SaveChanges();
-        _context.JobTitles.Add(emp.JobTitle);
-        _context.EmployeeStatus.Add(emp.StatusDb);
-        _context.SaveChanges();
-        _context.Employees.Add(emp);
-        _context.SaveChanges();
-        var updated_users = _context.Employees.ToArray();
-        throw new NotFoundException("User not found!");
-    }
-
-    static Employee ConvertFromDatabase(EmployeeDB employeeDb)
+    internal Employee ConvertFromDatabase(EmployeeDB employeeDb)
     {
         return new Employee(
             name: employeeDb.Name,
@@ -59,6 +21,51 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
             jobTitle: employeeDb.JobTitle.Description
         );
     }
+    
+    [HttpGet("Get")]
+    public IActionResult Get(string name)
+    {
+        try
+        {
+            // Collect employee by name from the internal function
+            return Ok(GetEmployee(name));
+        }
+        catch (NotFoundException e)
+        {
+            Console.WriteLine(e);
+            return NotFound(e.Message);
+        }
+        catch (GenericException e)
+        {
+            Console.WriteLine(e);
+            return ValidationProblem(e.Message);
+        }
+    }
+
+    private Employee GetEmployee(string name)
+    {
+        try
+        {
+            var employee = _context.Employees.FirstOrDefault(
+                it => it.Name.Equals(name, StringComparison.OrdinalIgnoreCase)
+            );
+            if (employee != null)
+            {
+                return ConvertFromDatabase(employee);
+            }
+            else
+            {
+                throw new NotFoundException("No employee found!");
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw new GenericException(e.Message);
+        }
+    }
+
+
     
     [HttpPost("Create")]
     public IActionResult Create(string name, int year, int month, int day)
