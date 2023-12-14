@@ -4,9 +4,8 @@ namespace CompanyApi.Models;
 
 public class EmployeeDB
 {
-    public EmployeeDB(long employeeId, string name, DateTime birthdate, EmployeeStatusDB statusDb, JobTitleDB jobTitle)
+    public EmployeeDB(string name, DateTime birthdate, EmployeeStatusDB statusDb, JobTitleDB jobTitle)
     {
-        EmployeeId = employeeId;
         Name = name;
         Birthdate = birthdate;
         StatusDb = statusDb;

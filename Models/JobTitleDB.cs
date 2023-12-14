@@ -4,9 +4,8 @@ namespace CompanyApi.Models;
 
 public class JobTitleDB
 {
-    public JobTitleDB(long jobTitleId, string description)
+    public JobTitleDB(string description)
     {
-        JobTitleId = jobTitleId;
         Description = description;
     }
     

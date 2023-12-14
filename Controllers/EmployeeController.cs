@@ -1,6 +1,8 @@
 using CompanyApi.Exceptions;
 using CompanyApi.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
 namespace CompanyApi.Controllers;
 
 [ApiController]
@@ -29,15 +31,22 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
 
     private Employee GetEmployee(string name)
     {
-        var status = new EmployeeStatusDB(1, "abc");
-        var title = new JobTitleDB(1, "abc");
-        var emp = new EmployeeDB(1, name, DateTime.Now, status, title); 
+        var status = new EmployeeStatusDB("abc");
+        var title = new JobTitleDB("abc");
+        var emp = new EmployeeDB(name, DateTime.Now, status, title); 
         if (emp.Name == "tiago")
         {
             return ConvertFromDatabase(emp);
         }
 
         var users = _context.Employees.ToArray();
+        _context.SaveChanges();
+        _context.JobTitles.Add(emp.JobTitle);
+        _context.EmployeeStatus.Add(emp.StatusDb);
+        _context.SaveChanges();
+        _context.Employees.Add(emp);
+        _context.SaveChanges();
+        var updated_users = _context.Employees.ToArray();
         throw new NotFoundException("User not found!");
     }
 
@@ -71,8 +80,8 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
     
     private Employee CreateEmployee(string name, int year, int month, int day)
     {
-        var status = new EmployeeStatusDB(1, "None");
-        var title = new JobTitleDB(1, "None");
+        var status = new EmployeeStatusDB("None");
+        var title = new JobTitleDB("None");
         DateTime birthday;
         try
         {
@@ -84,24 +93,24 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
             throw new InvalidParameterException("Invalid parameter");
         }
         
-        var emp = new EmployeeDB(1, name, birthday, status, title); 
+        var emp = new EmployeeDB(name, birthday, status, title); 
         return ConvertFromDatabase(emp);
     }
     
     [HttpGet("GetAll")]
     public IEnumerable<Employee> GetAllEmployees()
     {
-        var status = new EmployeeStatusDB(1, "abc");
-        var title = new JobTitleDB(1, "abc");
+        var status = new EmployeeStatusDB("abc");
+        var title = new JobTitleDB("abc");
         return Enumerable.Range(1, 5).Select(index => new Employee("tiago", DateTime.Now, status.Name, title.Description)).ToArray();
     }
     
     [HttpPatch("Update")]
     public Employee UpdateEmployee()
     {
-        var status = new EmployeeStatusDB(1, "abc");
-        var title = new JobTitleDB(1, "abc");
-        var emp = new EmployeeDB(1, "tiago", DateTime.Now, status, title); 
+        var status = new EmployeeStatusDB("abc");
+        var title = new JobTitleDB("abc");
+        var emp = new EmployeeDB("tiago", DateTime.Now, status, title); 
         return ConvertFromDatabase(emp);
     }
     

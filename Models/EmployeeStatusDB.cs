@@ -4,9 +4,8 @@ namespace CompanyApi.Models;
 
 public class EmployeeStatusDB
 {
-    public EmployeeStatusDB(long statusId, string name)
+    public EmployeeStatusDB(string name)
     {
-        StatusId = statusId;
         Name = name;
     }
     

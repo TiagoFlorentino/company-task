@@ -29,7 +29,7 @@
     <Compile Remove="Models\WeatherForecast.cs" />
     <Compile Remove="Data\EmployeeStatus.cs" />
     <Compile Remove="Data\JobTitle.cs" />
-    <Compile Include="Migrations/20231214181307_MainMigration.cs" />
+    <Compile Include="Migrations/20231214190047_MainMigration.cs" />
   </ItemGroup>
 
   <ItemGroup>
