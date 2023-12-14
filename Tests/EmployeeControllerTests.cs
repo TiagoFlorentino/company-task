@@ -20,7 +20,7 @@ public class EmployeeControllerTests
             jobTitle: title
         );
         var employee = controller.ConvertFromDatabase(employeeDB);
-        Assert.Equals(employeeDB.Name, employee.Name);
+        Assert.That(employeeDB.Name, Is.EqualTo(employee.Name));
     }
 
 }
