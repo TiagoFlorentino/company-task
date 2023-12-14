@@ -31,4 +31,7 @@ SELECT name FROM sys.databases;
 
 Change the following properties -> build_property.InvariantGlobalization = false
 
-### 
+### Issue with the migrations not being listed
+
+Solution https://stackoverflow.com/questions/67286637/migration-not-listed-by-net-core-cli
+

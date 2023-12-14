@@ -2,17 +2,18 @@ using System.ComponentModel.DataAnnotations;
 
 namespace CompanyApi.Models;
 
-public class EmployeeStatus
+public class EmployeeStatusDB
 {
-    public EmployeeStatus(long statusId, string name)
+    public EmployeeStatusDB(long statusId, string name)
     {
         StatusId = statusId;
         Name = name;
     }
     
-    public EmployeeStatus()
+    public EmployeeStatusDB()
     {
     }
+
 
     [Key]
     public long StatusId { get; set; }

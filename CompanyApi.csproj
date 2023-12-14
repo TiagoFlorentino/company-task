@@ -20,20 +20,24 @@
 
   <ItemGroup>
     <None Remove="Data\EmployeeDbContext" />
-    <None Remove="Migrations\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="Migrations\**" />
+    <Compile Remove="Operations\EmployeeActions.cs" />
+    <Compile Remove="Exceptions\NotFound.cs" />
+    <Compile Remove="Exceptions\InvalidParameters.cs" />
+    <Compile Remove="Models\WeatherForecast.cs" />
+    <Compile Remove="Data\EmployeeStatus.cs" />
+    <Compile Remove="Data\JobTitle.cs" />
+    <Compile Include="Migrations/20231214181307_MainMigration.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Remove="Migrations\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Remove="Migrations\**" />
     <Content Remove="runtimeconfig.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Operations\" />
   </ItemGroup>
   
 </Project>
