@@ -1,7 +1,7 @@
 namespace CompanyApi.Models;
 
-public class JobTitle(string description, long jobTitleId)
+public class JobTitle(long jobTitleId, string description)
 {
-    public long JobTitleId = jobTitleId;
-    public string Description = description;
+    public long JobTitleId { get; set; } = jobTitleId;
+    public string Description { get; set; } = description;
 }
