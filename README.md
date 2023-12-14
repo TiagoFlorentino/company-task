@@ -16,3 +16,19 @@ As for the REST API, these are the endpoints that we would like to see implement
 - List of all employees
 
 ![database requirements](Database.png)
+
+### DB Section
+
+dotnet ef migrations add InitialCreate
+dotnet ef database update
+SELECT name FROM sys.databases;
+
+
+
+## Troubleshooting Section
+
+####  System.Globalization.CultureNotFoundException: Only the invariant culture is supported in globalization-invariant mode.
+
+Change the following properties -> build_property.InvariantGlobalization = false
+
+### 

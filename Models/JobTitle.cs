@@ -1,7 +1,21 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace CompanyApi.Models;
 
-public class JobTitle(long jobTitleId, string description)
+public class JobTitle
 {
-    public long JobTitleId { get; set; } = jobTitleId;
-    public string Description { get; set; } = description;
+    public JobTitle(long jobTitleId, string description)
+    {
+        JobTitleId = jobTitleId;
+        Description = description;
+    }
+    
+    public JobTitle()
+    {
+    }
+
+    
+    [Key]
+    public long JobTitleId { get; set; } 
+    public string Description { get; set; }
 }

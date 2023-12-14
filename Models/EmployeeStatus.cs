@@ -1,7 +1,20 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace CompanyApi.Models;
 
-public class EmployeeStatus(long statusId, string name)
+public class EmployeeStatus
 {
-    public long StatusId { get; set; } = statusId;
-    public string Name { get; set; } = name;
+    public EmployeeStatus(long statusId, string name)
+    {
+        StatusId = statusId;
+        Name = name;
+    }
+    
+    public EmployeeStatus()
+    {
+    }
+
+    [Key]
+    public long StatusId { get; set; }
+    public string Name { get; set; }
 }
