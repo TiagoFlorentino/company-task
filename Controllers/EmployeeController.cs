@@ -26,6 +26,19 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
         return employee;
     }
     
+    internal DateTime GenerateValidDateTime(int year, int month, int day)
+    {
+        try
+        {
+            return new DateTime(year, month, day);
+        }
+        catch (Exception e)
+        {
+            // Non valid date
+            throw new InvalidParameterException("Invalid parameter - Date is not valid");
+        }
+    }
+    
     [HttpGet("Get")]
     public IActionResult Get(string name)
     {
@@ -83,21 +96,8 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
             return StatusCode(500, e.Message);
         }
     }
-
-    private static DateTime GenerateValidDateTime(int year, int month, int day)
-    {
-        try
-        {
-            return new DateTime(year, month, day);
-        }
-        catch (Exception e)
-        {
-            // Non valid date
-            throw new InvalidParameterException("Invalid parameter - Date is not valid");
-        }
-    }
     
-    private Employee CreateEmployee(string name, int year, int month, int day)
+    internal Employee CreateEmployee(string name, int year, int month, int day)
     {
         EmployeeStatusDB? initialStatus;
         JobTitleDB? initialTitle;
