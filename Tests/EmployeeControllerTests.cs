@@ -13,7 +13,7 @@ public class EmployeeControllerTests
     private AppDbContext CreateInMemoryDbContext()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(databaseName: "InMemoryDatabase")
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
 
         return new AppDbContext(options);
@@ -36,7 +36,7 @@ public class EmployeeControllerTests
     }
     
     [Test]
-    public void Generate_Valid_Date()
+    public void Test_Generate_Valid_Date()
     {
         var controller = new EmployeeController(null, null);
         var date = controller.GenerateValidDateTime(2012, 11, 12);
@@ -70,10 +70,6 @@ public class EmployeeControllerTests
             dbContext.JobTitles.Add(title);
             dbContext.Employees.Add(employeeDb);
             dbContext.SaveChanges();
-        }
-
-        using (var dbContext = CreateInMemoryDbContext())
-        {
             var controller = new EmployeeController(null, dbContext);
             var employee = controller.GetEmployee("testName");
             Assert.That(employeeDb.Name, Is.EqualTo(employee.Name));
@@ -101,10 +97,6 @@ public class EmployeeControllerTests
             dbContext.EmployeeStatus.Add(status);
             dbContext.JobTitles.Add(title);
             dbContext.SaveChanges();
-        }
-
-        using (var dbContext = CreateInMemoryDbContext())
-        {
             var name = "testName";
             var controller = new EmployeeController(null, dbContext);
             var employee = controller.CreateEmployee(name, 1999, 5, 5);
@@ -154,10 +146,6 @@ public class EmployeeControllerTests
                 jobTitle: title
             ));
             dbContext.SaveChanges();
-        }
-
-        using (var dbContext = CreateInMemoryDbContext())
-        {
             var controller = new EmployeeController(null, dbContext);
             var employeeList = controller.GetAllEmployees();
             Assert.That(employeeList.Count, Is.EqualTo(2));
@@ -183,10 +171,6 @@ public class EmployeeControllerTests
             dbContext.JobTitles.Add(title);
             dbContext.Employees.Add(employeeDb);
             dbContext.SaveChanges();
-        }
-
-        using (var dbContext = CreateInMemoryDbContext())
-        {
             var controller = new EmployeeController(null, dbContext);
             var initialEmployeeList = controller.GetAllEmployees();
             Assert.That(initialEmployeeList.Count, Is.EqualTo(1));
@@ -203,6 +187,74 @@ public class EmployeeControllerTests
         {
             var controller = new EmployeeController(null, dbContext);
             Assert.Throws<NotFoundException>(() => controller.DeleteEmployee("testName"));
+        }
+    }
+    
+    [Test]
+    public void Test_Invalid_Update_Employee()
+    {
+        using (var dbContext = CreateInMemoryDbContext())
+        {
+            var controller = new EmployeeController(null, dbContext);
+            var employee = new Employee();
+            Assert.Throws<InvalidParameterException>(() => controller.UpdateEmployee(employee));
+        }
+    }
+    
+    [Test]
+    public void Test_NotFound_Update_Employee()
+    {
+        using (var dbContext = CreateInMemoryDbContext())
+        {
+            var controller = new EmployeeController(null, dbContext);
+            var employee = new Employee
+            {
+                EmployeeId = 0
+            };
+            Assert.Throws<NotFoundException>(() => controller.UpdateEmployee(employee));
+        }
+    }
+    
+    [Test]
+    public void Test_OK_Update_Employee()
+    {
+        var status = new EmployeeStatusDB("Undefined");
+        var title = new JobTitleDB("Undefined");
+        var employeeDb = new EmployeeDB(
+            name: "testName",
+            birthdate: new DateTime(2020, 1, 1),
+            status: status,
+            jobTitle: title
+        );
+        using (var dbContext = CreateInMemoryDbContext())
+        {
+            // Initialize data in the in-memory database
+            dbContext.EmployeeStatus.Add(status);
+            dbContext.EmployeeStatus.Add(new EmployeeStatusDB("Working"));
+            dbContext.JobTitles.Add(title);
+            dbContext.JobTitles.Add(new JobTitleDB("Developer"));
+            dbContext.Employees.Add(employeeDb);
+            dbContext.SaveChanges();
+            var controller = new EmployeeController(null, dbContext);
+            var birthdate = controller.GenerateValidDateTime(1990, 2, 1);
+            var employee = new Employee
+            {
+                EmployeeId = 1,
+                Name = "Updated_Name",
+                Birthdate = birthdate,
+                Status = "Working",
+                JobTitle = "Developer"
+            };
+            var currentEmployee = controller.GetEmployee("testName");
+            controller.UpdateEmployee(employee);
+            var updatedEmployee = controller.GetEmployee("Updated_Name");
+            Assert.That(updatedEmployee.EmployeeId, Is.EqualTo(currentEmployee.EmployeeId));
+            Assert.That(updatedEmployee.Name, Is.EqualTo("Updated_Name"));
+            Assert.That(updatedEmployee.Status, Is.EqualTo("Working"));
+            Assert.That(updatedEmployee.JobTitle, Is.EqualTo("Developer"));
+            Assert.That(updatedEmployee.Birthdate!.Value.Year, Is.EqualTo(1990));
+            Assert.That(updatedEmployee.Birthdate!.Value.Month, Is.EqualTo(2));
+            Assert.That(updatedEmployee.Birthdate!.Value.Day, Is.EqualTo(1));
         }
     }
 }

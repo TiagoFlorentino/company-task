@@ -219,7 +219,7 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
         }
     }
     
-    private void UpdateEmployee([FromBody] Employee employeeEntity)
+    internal void UpdateEmployee([FromBody] Employee employeeEntity)
     {
         if (employeeEntity.EmployeeId == null) throw new InvalidParameterException("Missing employee ID");
 
