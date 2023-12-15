@@ -49,7 +49,7 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
         {
             // Collect the first employee or null
             var employee = _context.Employees.FirstOrDefault(
-                it => it.Name.Equals(name, StringComparison.OrdinalIgnoreCase)
+                it => it.Name.Equals(name)
             );
             if (employee != null)
             {
@@ -158,6 +158,24 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
         }
     }
     
+    [HttpDelete("Delete")]
+    public IActionResult DeleteEmployee(string name)
+    {
+        var employee = _context.Employees.FirstOrDefault(
+            it => it.Name.Equals(name)
+        );
+        if (employee != null)
+        {
+            _context.Employees.Remove(employee);
+            _context.SaveChanges();
+            return Ok("Employee deleted");
+        }
+        else
+        {
+            return NotFound("Employee not found");
+        }
+    }
+    
     [HttpPatch("Update")]
     public Employee UpdateEmployee()
     {
@@ -165,12 +183,6 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
         var title = new JobTitleDB("abc");
         var emp = new EmployeeDB("tiago", DateTime.Now, status, title); 
         return ConvertFromDatabase(emp);
-    }
-    
-    [HttpDelete("Delete")]
-    public bool DeleteEmployee()
-    {
-        return true;
     }
     
     
