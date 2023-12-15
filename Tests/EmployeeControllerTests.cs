@@ -130,5 +130,80 @@ public class EmployeeControllerTests
             Assert.Throws<NotFoundException>(() => controller.CreateEmployee(name, 1999, 5, 5));
         }
     }
+    
+    [Test]
+    public void Test_OK_Get_All_Employee()
+    {
+        var status = new EmployeeStatusDB("Undefined");
+        var title = new JobTitleDB("Undefined");
+        using (var dbContext = CreateInMemoryDbContext())
+        {
+            // Initialize data in the in-memory database
+            dbContext.EmployeeStatus.Add(status);
+            dbContext.JobTitles.Add(title);
+            dbContext.Employees.Add(new EmployeeDB(
+                name: "testName",
+                birthdate: new DateTime(2020, 1, 1),
+                status: status,
+                jobTitle: title
+            ));
+            dbContext.Employees.Add(new EmployeeDB(
+                name: "testName2",
+                birthdate: new DateTime(2020, 2, 2),
+                status: status,
+                jobTitle: title
+            ));
+            dbContext.SaveChanges();
+        }
+
+        using (var dbContext = CreateInMemoryDbContext())
+        {
+            var controller = new EmployeeController(null, dbContext);
+            var employeeList = controller.GetAllEmployees();
+            Assert.That(employeeList.Count, Is.EqualTo(2));
+            Assert.That(employeeList[0].Name, !Is.EqualTo(employeeList[1].Name));
+        }
+    }
+    
+    [Test]
+    public void Test_OK_Delete_Employee()
+    {
+        var status = new EmployeeStatusDB("Undefined");
+        var title = new JobTitleDB("Undefined");
+        var employeeDb = new EmployeeDB(
+            name: "testName",
+            birthdate: new DateTime(2020, 1, 1),
+            status: status,
+            jobTitle: title
+        );
+        using (var dbContext = CreateInMemoryDbContext())
+        {
+            // Initialize data in the in-memory database
+            dbContext.EmployeeStatus.Add(status);
+            dbContext.JobTitles.Add(title);
+            dbContext.Employees.Add(employeeDb);
+            dbContext.SaveChanges();
+        }
+
+        using (var dbContext = CreateInMemoryDbContext())
+        {
+            var controller = new EmployeeController(null, dbContext);
+            var initialEmployeeList = controller.GetAllEmployees();
+            Assert.That(initialEmployeeList.Count, Is.EqualTo(1));
+            controller.DeleteEmployee("testName");
+            var employeeList = controller.GetAllEmployees();
+            Assert.That(employeeList.Count, Is.EqualTo(0));
+        }
+    }
+    
+    [Test]
+    public void Test_NotFound_Delete_Employee()
+    {
+        using (var dbContext = CreateInMemoryDbContext())
+        {
+            var controller = new EmployeeController(null, dbContext);
+            Assert.Throws<NotFoundException>(() => controller.DeleteEmployee("testName"));
+        }
+    }
 }
 

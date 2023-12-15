@@ -147,7 +147,7 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
         }
     }
 
-    private List<Employee> GetAllEmployees()
+    internal List<Employee> GetAllEmployees()
     {
         try
         {
@@ -184,7 +184,7 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
         }
     }
 
-    private void DeleteEmployee(string name)
+    internal void DeleteEmployee(string name)
     {
         var employee = _context.Employees.FirstOrDefault(
             it => it.Name.Equals(name)
