@@ -15,6 +15,7 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
     internal Employee ConvertFromDatabase(EmployeeDB employeeDb)
     {
         var employee = new Employee(
+            id: employeeDb.EmployeeId,
             name: employeeDb.Name,
             birthdate: employeeDb.Birthdate,
             status: employeeDb.StatusDb.Name,
@@ -177,12 +178,56 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
     }
     
     [HttpPatch("Update")]
-    public Employee UpdateEmployee()
+    public IActionResult UpdateEmployee([FromBody] Employee employeeEntity)
     {
-        var status = new EmployeeStatusDB("abc");
-        var title = new JobTitleDB("abc");
-        var emp = new EmployeeDB("tiago", DateTime.Now, status, title); 
-        return ConvertFromDatabase(emp);
+        if (employeeEntity.EmployeeId == null)
+        {
+            return StatusCode(422, "Missing employee ID");
+        }
+
+        var employeeToUpdate = _context.Employees.Find(employeeEntity.EmployeeId);
+        if (employeeToUpdate == null)
+        {
+            return StatusCode(404, "No employee with that ID available!");
+        }
+
+        string[] specialParameters = { "Status", "JobTitle" };
+        foreach (var property in employeeEntity.GetType().GetProperties())
+        {
+            var propertyValue = property.GetValue(employeeEntity);
+            // ignore nulls - nothing to update
+            if (propertyValue == null || property.Name == "EmployeeId") continue;
+            if (specialParameters.Contains(property.Name))
+            {
+                if (property.Name == "Status")
+                {
+                    var newStatus = _context.EmployeeStatus.FirstOrDefault(
+                        it => it.Name.Equals(employeeEntity.Status)
+                    );
+                    // Skip on null
+                    if (newStatus == null) continue;
+                    employeeToUpdate.StatusDb = newStatus;
+                }
+                else
+                {
+                    var newTitle = _context.JobTitles.FirstOrDefault(
+                        it => it.Description.Equals(employeeEntity.JobTitle)
+                    );
+                    // Skip on null
+                    if (newTitle == null) continue;
+                    employeeToUpdate.JobTitle = newTitle;
+                }
+            }
+            else
+            {
+                // Get the correct property from the DB model given we are parsing the DB models and API models
+                var dbProperty = employeeToUpdate.GetType().GetProperties().Where(entity => entity.Name == property.Name).FirstOrDefault();
+                // Set its value dynamically
+                dbProperty.SetValue(employeeToUpdate, propertyValue);
+            }
+        }
+        _context.SaveChanges();
+        return Ok();
     }
     
     
