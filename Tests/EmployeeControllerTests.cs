@@ -1,4 +1,5 @@
 using CompanyApi.Controllers;
+using CompanyApi.Exceptions;
 using CompanyApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Moq;
@@ -17,7 +18,7 @@ public class EmployeeControllerTests
 
         return new AppDbContext(options);
     }
-    
+
     [Test]
     public void Compare_Parsed_Objects_For_Employee()
     {
@@ -33,9 +34,9 @@ public class EmployeeControllerTests
         var employee = controller.ConvertFromDatabase(employeeDb);
         Assert.That(employeeDb.Name, Is.EqualTo(employee.Name));
     }
-    
-    
-    
+
+
+
     [Test]
     public void Test_OK_Get_Employee()
     {
@@ -46,7 +47,7 @@ public class EmployeeControllerTests
             birthdate: new DateTime(2020, 1, 1),
             status: status,
             jobTitle: title
-        ); 
+        );
         using (var dbContext = CreateInMemoryDbContext())
         {
             // Initialize data in the in-memory database
@@ -55,7 +56,7 @@ public class EmployeeControllerTests
             dbContext.Employees.Add(employeeDb);
             dbContext.SaveChanges();
         }
-        
+
         using (var dbContext = CreateInMemoryDbContext())
         {
             var controller = new EmployeeController(null, dbContext);
@@ -65,4 +66,14 @@ public class EmployeeControllerTests
 
     }
 
+    [Test]
+    public void Test_NotFound_Get_Employee()
+    {
+        using (var dbContext = CreateInMemoryDbContext())
+        {
+            var controller = new EmployeeController(null, dbContext);
+            Assert.Throws<NotFoundException>(() => controller.GetEmployee("testName"));
+        }
+    }
 }
+

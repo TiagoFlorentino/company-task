@@ -39,7 +39,7 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
             // Not found
             return StatusCode(404, e.Message);
         }
-        catch (GenericException e)
+        catch (Exception e)
         {
             // Internal Server Error
             return StatusCode(500, e.Message);
@@ -48,24 +48,15 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
 
     internal Employee GetEmployee(string name)
     {
-        try
-        {
-            // Collect the first employee or null
-            var employee = _context.Employees
-                .Include(e => e.JobTitle)
-                .Include(a => a.StatusDb)
-                .FirstOrDefault(
-                it => it.Name.Equals(name)
-            );
-            if (employee == null) throw new NotFoundException("No employee found!");
-            return ConvertFromDatabase(employee);
-
-        }
-        catch (Exception e)
-        {
-            // Catch any other exception
-            throw new GenericException(e.Message);
-        }
+        // Collect the first employee or null
+        var employee = _context.Employees
+            .Include(e => e.JobTitle)
+            .Include(a => a.StatusDb)
+            .FirstOrDefault(
+            it => it.Name.Equals(name)
+        );
+        if (employee == null) throw new NotFoundException("No employee found!");
+        return ConvertFromDatabase(employee);
     }
     
     [HttpPost("Create")]
