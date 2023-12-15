@@ -7,9 +7,9 @@ namespace CompanyApi.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext contex) : ControllerBase
+public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext context) : ControllerBase
 {
-    private readonly AppDbContext _context = contex;
+    private readonly AppDbContext _context = context;
     private readonly ILogger<EmployeeController> _logger = logger;
 
     internal Employee ConvertFromDatabase(EmployeeDB employeeDb)
@@ -46,7 +46,7 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
         }
     }
 
-    private Employee GetEmployee(string name)
+    internal Employee GetEmployee(string name)
     {
         try
         {
