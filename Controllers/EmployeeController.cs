@@ -14,12 +14,13 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
 
     internal Employee ConvertFromDatabase(EmployeeDB employeeDb)
     {
-        return new Employee(
+        var employee = new Employee(
             name: employeeDb.Name,
             birthdate: employeeDb.Birthdate,
             status: employeeDb.StatusDb.Name,
             jobTitle: employeeDb.JobTitle.Description
         );
+        return employee;
     }
     
     [HttpGet("Get")]
@@ -46,6 +47,7 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
     {
         try
         {
+            // Collect the first employee or null
             var employee = _context.Employees.FirstOrDefault(
                 it => it.Name.Equals(name, StringComparison.OrdinalIgnoreCase)
             );
@@ -81,14 +83,41 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
             Console.WriteLine(e);
             return BadRequest(e.Message);
         }
+        catch (NotFoundException e)
+        {
+            Console.WriteLine(e);
+            return NotFound(e.Message);
+        }
         return Ok(employee);
     }
     
     
     private Employee CreateEmployee(string name, int year, int month, int day)
     {
-        var status = new EmployeeStatusDB("None");
-        var title = new JobTitleDB("None");
+        EmployeeStatusDB? initialStatus;
+        JobTitleDB? initialTitle;
+        try
+        {
+            initialTitle = _context.JobTitles.FirstOrDefault(
+                it => it.Description.Equals("Undefined")
+            );
+            initialStatus = _context.EmployeeStatus.FirstOrDefault(
+                it => it.Name.Equals("Undefined")
+            );
+            
+        }
+        catch (Exception e)
+        {
+            // This will most likely never happen unless there's an issue with the connection to the DB
+            // or the DB was not populated
+            throw new NotFoundException("Error collecting initial tiles or status! Verify this issue with the owner of the platform!");
+        }
+
+        if (initialStatus == null || initialTitle == null)
+        {
+            throw new NotFoundException("Failed to collect initial tiles or status! Verify this issue with the owner of the platform!");
+        }
+        
         DateTime birthday;
         try
         {
@@ -97,19 +126,36 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
         catch (Exception e)
         {
             Console.WriteLine(e);
-            throw new InvalidParameterException("Invalid parameter");
+            throw new InvalidParameterException("Invalid parameter - Date is not valid");
         }
         
-        var emp = new EmployeeDB(name, birthday, status, title); 
-        return ConvertFromDatabase(emp);
+        var newEmployee = new EmployeeDB(name, birthday, initialStatus, initialTitle); 
+        _context.Employees.Add(newEmployee);
+        _context.SaveChanges();
+        return ConvertFromDatabase(newEmployee);
     }
     
     [HttpGet("GetAll")]
-    public IEnumerable<Employee> GetAllEmployees()
+    public IActionResult GetAllEmployees()
     {
-        var status = new EmployeeStatusDB("abc");
-        var title = new JobTitleDB("abc");
-        return Enumerable.Range(1, 5).Select(index => new Employee("tiago", DateTime.Now, status.Name, title.Description)).ToArray();
+        try
+        {
+            // Using eager loading to ensure that the related entities are loaded along with the main entities.
+            var employeeDbs = _context.Employees
+                .Include(e => e.JobTitle)
+                .Include(a => a.StatusDb)
+                .ToArray();
+            List<Employee> employeeList = new List<Employee>();
+            foreach (EmployeeDB employee in employeeDbs)
+            {
+                employeeList.Add(ConvertFromDatabase(employee));
+            }
+            return Ok(employeeList);
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, "Failed to collect all employees");
+        }
     }
     
     [HttpPatch("Update")]
@@ -125,5 +171,24 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
     public bool DeleteEmployee()
     {
         return true;
+    }
+    
+    
+    [HttpGet("GenerateData")]
+    public void GenerateData()
+    {
+        string[] titles = {"Developer", "PM", "HR Partner", "CEO", "Ex-Employee", "No relation", "Undefined"};
+        foreach (string title in titles) 
+        {
+            _context.JobTitles.Add(new JobTitleDB(title));
+        }
+        _context.SaveChanges();
+        
+        string[] statusList = {"Working", "Vacation", "Ex-Employee", "No relation", "Undefined"};
+        foreach (string status in statusList) 
+        {
+            _context.EmployeeStatus.Add(new EmployeeStatusDB(status));
+        }
+        _context.SaveChanges();
     }
 }
