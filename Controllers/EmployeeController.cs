@@ -14,6 +14,8 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
 
     internal Employee ConvertFromDatabase(EmployeeDB employeeDb)
     {
+        // Convert Employee DB model to Employee API model
+        // Allows us to filters which information can be displayed to the end user
         var employee = new Employee(
             id: employeeDb.EmployeeId,
             name: employeeDb.Name,
@@ -30,17 +32,17 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
         try
         {
             // Collect employee by name from the internal function
-            return Ok(GetEmployee(name));
+            return StatusCode(200, GetEmployee(name));
         }
         catch (NotFoundException e)
         {
-            Console.WriteLine(e);
-            return NotFound(e.Message);
+            // Not found
+            return StatusCode(404, e.Message);
         }
         catch (GenericException e)
         {
-            Console.WriteLine(e);
-            return ValidationProblem(e.Message);
+            // Internal Server Error
+            return StatusCode(500, e.Message);
         }
     }
 
@@ -49,49 +51,60 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
         try
         {
             // Collect the first employee or null
-            var employee = _context.Employees.FirstOrDefault(
+            var employee = _context.Employees
+                .Include(e => e.JobTitle)
+                .Include(a => a.StatusDb)
+                .FirstOrDefault(
                 it => it.Name.Equals(name)
             );
-            if (employee != null)
-            {
-                return ConvertFromDatabase(employee);
-            }
-            else
-            {
-                throw new NotFoundException("No employee found!");
-            }
+            if (employee == null) throw new NotFoundException("No employee found!");
+            return ConvertFromDatabase(employee);
+
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            // Catch any other exception
             throw new GenericException(e.Message);
         }
     }
-
-
     
     [HttpPost("Create")]
     public IActionResult Create(string name, int year, int month, int day)
     {
         // Collect employee by name from the internal function
-        Employee employee;
         try
         {
-            employee = CreateEmployee(name, year, month, day);
+            return Ok( CreateEmployee(name, year, month, day));
         }
         catch (InvalidParameterException e)
         {
-            Console.WriteLine(e);
-            return BadRequest(e.Message);
+            // Bad Request
+            return StatusCode(400, e.Message);
         }
         catch (NotFoundException e)
         {
-            Console.WriteLine(e);
-            return NotFound(e.Message);
+            // Not found
+            return StatusCode(404, e.Message);
         }
-        return Ok(employee);
+        catch (GenericException e)
+        {
+            // Internal Server Error
+            return StatusCode(500, e.Message);
+        }
     }
-    
+
+    private static DateTime GenerateValidDateTime(int year, int month, int day)
+    {
+        try
+        {
+            return new DateTime(year, month, day);
+        }
+        catch (Exception e)
+        {
+            // Non valid date
+            throw new InvalidParameterException("Invalid parameter - Date is not valid");
+        }
+    }
     
     private Employee CreateEmployee(string name, int year, int month, int day)
     {
@@ -113,31 +126,37 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
             // or the DB was not populated
             throw new NotFoundException("Error collecting initial tiles or status! Verify this issue with the owner of the platform!");
         }
+        if (initialStatus == null || initialTitle == null) throw new NotFoundException("Failed to collect initial tiles or status! Verify this issue with the owner of the platform!");
 
-        if (initialStatus == null || initialTitle == null)
-        {
-            throw new NotFoundException("Failed to collect initial tiles or status! Verify this issue with the owner of the platform!");
-        }
-        
-        DateTime birthday;
         try
         {
-            birthday = new DateTime(year, month, day);
+            var newEmployee = new EmployeeDB(name, GenerateValidDateTime(year, month, day), initialStatus, initialTitle); 
+            _context.Employees.Add(newEmployee);
+            _context.SaveChanges();
+            var loadEmployee = GetEmployee(name); 
+            return loadEmployee;
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
-            throw new InvalidParameterException("Invalid parameter - Date is not valid");
+            throw new GenericException(e.Message);
         }
-        
-        var newEmployee = new EmployeeDB(name, birthday, initialStatus, initialTitle); 
-        _context.Employees.Add(newEmployee);
-        _context.SaveChanges();
-        return ConvertFromDatabase(newEmployee);
     }
     
     [HttpGet("GetAll")]
-    public IActionResult GetAllEmployees()
+    public IActionResult GetAll()
+    {
+        try
+        {
+           return Ok(GetAllEmployees());
+        }
+        catch (GenericException e)
+        {
+            // Internal Server Error
+            return StatusCode(500, e.Message);
+        }
+    }
+
+    private List<Employee> GetAllEmployees()
     {
         try
         {
@@ -151,45 +170,70 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
             {
                 employeeList.Add(ConvertFromDatabase(employee));
             }
-            return Ok(employeeList);
+            return employeeList;
         }
         catch (Exception e)
         {
-            return StatusCode(500, "Failed to collect all employees");
+            throw new GenericException(e.Message);
         }
     }
     
     [HttpDelete("Delete")]
-    public IActionResult DeleteEmployee(string name)
+    public IActionResult Delete(string name)
+    {
+        try
+        {
+            DeleteEmployee(name);
+            return Ok("Employee Deleted");
+        }
+        catch (NotFoundException e)
+        {
+            Console.WriteLine(e);
+            return NotFound(e.Message);
+        }
+    }
+
+    private void DeleteEmployee(string name)
     {
         var employee = _context.Employees.FirstOrDefault(
             it => it.Name.Equals(name)
         );
-        if (employee != null)
-        {
-            _context.Employees.Remove(employee);
-            _context.SaveChanges();
-            return Ok("Employee deleted");
-        }
-        else
-        {
-            return NotFound("Employee not found");
-        }
+        if (employee == null) throw new NotFoundException("Employee not found");
+        _context.Employees.Remove(employee);
+        _context.SaveChanges();
     }
     
     [HttpPatch("Update")]
-    public IActionResult UpdateEmployee([FromBody] Employee employeeEntity)
+    public IActionResult Update([FromBody] Employee employeeEntity)
     {
-        if (employeeEntity.EmployeeId == null)
+        try
         {
-            return StatusCode(422, "Missing employee ID");
+            UpdateEmployee(employeeEntity);
+            return Ok("Employee was updated!");
         }
+        catch (InvalidParameterException e)
+        {
+            // Bad Request
+            return StatusCode(400, e.Message);
+        }
+        catch (NotFoundException e)
+        {
+            // Not found
+            return StatusCode(404, e.Message);
+        }
+        catch (Exception e)
+        {
+            // Internal Server Error
+            return StatusCode(500, e.Message);
+        }
+    }
+    
+    private void UpdateEmployee([FromBody] Employee employeeEntity)
+    {
+        if (employeeEntity.EmployeeId == null) throw new InvalidParameterException("Missing employee ID");
 
         var employeeToUpdate = _context.Employees.Find(employeeEntity.EmployeeId);
-        if (employeeToUpdate == null)
-        {
-            return StatusCode(404, "No employee with that ID available!");
-        }
+        if (employeeToUpdate == null) throw new NotFoundException("No employee with that ID available!");
 
         string[] specialParameters = { "Status", "JobTitle" };
         foreach (var property in employeeEntity.GetType().GetProperties())
@@ -221,19 +265,21 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
             else
             {
                 // Get the correct property from the DB model given we are parsing the DB models and API models
-                var dbProperty = employeeToUpdate.GetType().GetProperties().Where(entity => entity.Name == property.Name).FirstOrDefault();
+                var dbProperty = employeeToUpdate.GetType().GetProperties().FirstOrDefault(entity => entity.Name == property.Name);
                 // Set its value dynamically
-                dbProperty.SetValue(employeeToUpdate, propertyValue);
+                dbProperty?.SetValue(employeeToUpdate, propertyValue);
             }
         }
         _context.SaveChanges();
-        return Ok();
     }
     
     
     [HttpGet("GenerateData")]
     public void GenerateData()
     {
+        // This endpoint is meant to be use for demo purposes only
+        // Tests will not be added given this would generally not be part of the application
+        // A separate solution to having this function would be to initialize the parameters on the DB on application startup (if not yet present)
         string[] titles = {"Developer", "PM", "HR Partner", "CEO", "Ex-Employee", "No relation", "Undefined"};
         foreach (string title in titles) 
         {
