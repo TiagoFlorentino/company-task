@@ -179,7 +179,6 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
         }
         catch (NotFoundException e)
         {
-            Console.WriteLine(e);
             return NotFound(e.Message);
         }
     }
@@ -240,7 +239,7 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
                         it => it.Name.Equals(employeeEntity.Status)
                     );
                     // Skip on null
-                    if (newStatus == null) continue;
+                    if (newStatus == null) throw new InvalidParameterException("Status not available!");
                     employeeToUpdate.StatusDb = newStatus;
                 }
                 else
@@ -249,7 +248,7 @@ public class EmployeeController(ILogger<EmployeeController> logger, AppDbContext
                         it => it.Description.Equals(employeeEntity.JobTitle)
                     );
                     // Skip on null
-                    if (newTitle == null) continue;
+                    if (newTitle == null) throw new InvalidParameterException("Title not available!");;
                     employeeToUpdate.JobTitle = newTitle;
                 }
             }

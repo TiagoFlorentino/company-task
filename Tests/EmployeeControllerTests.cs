@@ -257,5 +257,39 @@ public class EmployeeControllerTests
             Assert.That(updatedEmployee.Birthdate!.Value.Day, Is.EqualTo(1));
         }
     }
+    
+    [Test]
+    public void Test_Invalid_Status_Update_Employee()
+    {
+        var status = new EmployeeStatusDB("Undefined");
+        var title = new JobTitleDB("Undefined");
+        var employeeDb = new EmployeeDB(
+            name: "testName",
+            birthdate: new DateTime(2020, 1, 1),
+            status: status,
+            jobTitle: title
+        );
+        using (var dbContext = CreateInMemoryDbContext())
+        {
+            // Initialize data in the in-memory database
+            dbContext.EmployeeStatus.Add(status);
+            dbContext.JobTitles.Add(title);
+            dbContext.Employees.Add(employeeDb);
+            dbContext.SaveChanges();
+            var controller = new EmployeeController(null, dbContext);
+            var externalEmployee = new Employee
+            {
+                EmployeeId = 1,
+                JobTitle = "External"
+            };
+            Assert.Throws<InvalidParameterException>(() => controller.UpdateEmployee(externalEmployee));
+            var ptoEmployee = new Employee
+            {
+                EmployeeId = 1,
+                Status = "PTO"
+            };
+            Assert.Throws<InvalidParameterException>(() => controller.UpdateEmployee(ptoEmployee));
+        }
+    }
 }
 

@@ -84,7 +84,7 @@ The endpoint will generate the following data points:
 
 Change the following properties -> build_property.InvariantGlobalization = false
 
-### 2) Issue with the migrations not being listed
+#### 2) Issue with the migrations not being listed
 
 Solution https://stackoverflow.com/questions/67286637/migration-not-listed-by-net-core-cli
 
